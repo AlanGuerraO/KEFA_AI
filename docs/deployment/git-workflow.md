@@ -72,12 +72,13 @@ Para que la convención anterior se cumpla automáticamente, el repositorio incl
 npm install
 ```
 
-Esto ejecuta automáticamente el script `prepare` (`husky install`), que activa los hooks de Git.
+Esto ejecuta automáticamente el script `prepare` (`husky`), que activa los hooks de Git (sintaxis Husky v9; no usar `husky install`, que es de v8 y está deprecada).
 
-> **Nota:** el archivo `.husky/commit-msg` debe tener permisos de ejecución. Si al clonar el repo el hook no se ejecuta, correr una vez:
+> **Nota (Windows):** `chmod` no existe en PowerShell. Usa **Git Bash** (incluido en "Git for Windows") para correr `chmod`, o en su defecto ejecuta el equivalente vía Git:
 > ```bash
-> chmod +x .husky/commit-msg
+> git update-index --chmod=+x .husky/commit-msg
 > ```
+> Esto es lo que realmente importa: le dice a Git que guarde el archivo con el bit de ejecución activado en el repositorio, para que llegue ejecutable a quien clone en Linux/macOS.
 
 ### Comportamiento esperado
 
@@ -124,7 +125,7 @@ Los pasos exactos de configuración en GitHub se documentan de forma operativa e
 
 ## 6. Qué se versiona y qué no
 
-**Dentro de Git:** código fuente, `.env.example`, `docker-compose.yml` (sin secretos), documentación (`docs/`), tests, `package.json`/`commitlint.config.js`/`.husky/` (herramientas de commit), `.github/PULL_REQUEST_TEMPLATE.md`.
+**Dentro de Git:** código fuente, `.env.example`, `docker-compose.yml` (sin secretos), documentación (`docs/`), tests, `package.json`/`commitlint.config.js`/`.husky/` (herramientas de commit), `.gitattributes` (fuerza LF en scripts/hooks), `.github/PULL_REQUEST_TEMPLATE.md`.
 
 **Fuera de Git (`.gitignore`):** `.env` real, credenciales, `node_modules/`, entornos virtuales, volúmenes de PostgreSQL, `.vscode/` (ignorado por completo, decisión de equipo), archivos de sistema (`.DS_Store`, `Thumbs.db`).
 
