@@ -1,8 +1,0 @@
-# Forzar LF (Unix) en scripts de shell y hooks de Husky,
-# independientemente del sistema operativo o configuración
-# de core.autocrlf de quien clone el repositorio.
-# Sin esto, Windows puede convertir estos archivos a CRLF
-# y romper su ejecución en Linux/macOS (falla el shebang).
-
-.husky/* text eol=lf
-*.sh text eol=lf
