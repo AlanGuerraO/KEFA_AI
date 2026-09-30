@@ -89,3 +89,10 @@ credentials.json
 # ============================
 *.bak
 *.tmp
+
+# ============================
+# Docker secrets (archivos reales)
+# Solo se versiona el *.example
+# ============================
+secrets/*
+!secrets/*.example
