@@ -1,0 +1,149 @@
+# docker-compose.yml — KEFA AI
+#
+# Se omite la clave "version": está deprecada en Docker Compose v2+.
+#
+# Servicios ACTIVOS:
+#   - db      (PostgreSQL)
+#   - n8n     (automatización — KEFA-ADR-004 ✅ APPROVED)
+#   - backend (Django + DRF)
+#
+# KEFA-ADR-004: imagen oficial docker.n8n.io/n8nio/n8n, versión fijada
+# (nunca "latest"/"next"/"nightly"), backend de BD de n8n en PostgreSQL
+# (no SQLite), credenciales sensibles vía Docker secrets (_FILE), nunca
+# como variable plana. Ver docs/deployment/control-de-estado.md.
+#
+# backend: config/settings.py no soporta el sufijo _FILE para
+# credenciales (solo os.getenv("POSTGRES_PASSWORD") plano), así que
+# su imagen incluye un entrypoint que exporta la variable a partir del
+# Docker secret antes de arrancar Django. Ver backend/docker-entrypoint.sh.
+#
+# Servicio "frontend" queda comentado abajo como plantilla: actívalo
+# cuando exista un Dockerfile real en frontend/. No se genera activo
+# ahora para no inventar estructura que el equipo todavía no ha creado
+# (Integrante 4 - frontend).
+#
+# Variables no sensibles se leen de ".env" (copia ".env.example").
+# La contraseña de Postgres NO va en .env: ver secrets/postgres_password.txt.example
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: kefa-db
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets:
+      - postgres_password
+    ports:
+      # Solo para depuración local (ej. cliente psql/DBeaver desde el host).
+      # Evaluar remover este mapeo en un entorno de producción real.
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Script de inicialización: crea la base de datos separada para n8n
+      # (n8n_db) la primera vez que se crea el volumen. Solo corre una vez.
+      - ./docker/postgres/init-n8n-db.sh:/docker-entrypoint-initdb.d/init-n8n-db.sh:ro
+    networks:
+      - kefa-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  n8n:
+    # KEFA-ADR-004: imagen oficial + versión fijada. Verificar en el Hub
+    # (pestaña Tags de docker.n8n.io/n8nio/n8n) si existe un patch más
+    # reciente de la serie 2.40 antes de confirmar este tag como definitivo.
+    image: docker.n8n.io/n8nio/n8n:2.40.7
+    container_name: kefa-n8n
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+      N8N_HOST: ${N8N_HOST}
+      N8N_PORT: ${N8N_PORT}
+      WEBHOOK_URL: ${N8N_BASE_URL}
+      # KEFA-ADR-004: backend de BD de n8n en Postgres, no SQLite.
+      # Base de datos separada (n8n_db) dentro del mismo servidor Postgres
+      # (supuesto técnico, no explícito en la ADR — ver ANÁLISIS).
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: db
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: n8n_db
+      DB_POSTGRESDB_USER: ${POSTGRES_USER}
+      DB_POSTGRESDB_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets:
+      - postgres_password
+    ports:
+      - "${N8N_PORT}:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - kefa-network
+    depends_on:
+      db:
+        condition: service_healthy
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: kefa-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # settings.py solo lee POSTGRES_PASSWORD como variable plana (no
+      # soporta _FILE): el entrypoint de la imagen la exporta a partir
+      # de este secreto antes de arrancar Django (KEFA-ADR-004).
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets:
+      - postgres_password
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - kefa-network
+
+  # ------------------------------------------------------------------
+  # PENDIENTE DE ACTIVAR: requiere frontend/Dockerfile real (Vite +
+  # React), que todavía no existe en el repo. Descomentar cuando
+  # el Integrante 4 (Alan) tenga la app de frontend creada.
+  # ------------------------------------------------------------------
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   container_name: kefa-frontend
+  #   restart: unless-stopped
+  #   ports:
+  #     - "5173:5173"
+  #   volumes:
+  #     - ./frontend:/app
+  #     - /app/node_modules
+  #   depends_on:
+  #     - backend
+  #   networks:
+  #     - kefa-network
+
+volumes:
+  postgres_data:
+  n8n_data:
+
+networks:
+  kefa-network:
+    driver: bridge
+
+secrets:
+  postgres_password:
+    file: ./secrets/postgres_password.txt
