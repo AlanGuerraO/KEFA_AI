@@ -1,0 +1,58 @@
+/*
+  Tokens de diseño de KEFA AI.
+
+  Claro: el look original aprobado (acento índigo, Space Grotesk + IBM Plex Sans).
+  Oscuro: paleta de identidad de marca (tinta/azul profundo/azul cielo).
+
+  Por defecto sigue la preferencia del sistema; el usuario puede forzarlo con
+  data-theme="light" | "dark" en <html> (ver ThemeContext.jsx).
+*/
+
+:root {
+  --bg: #f7f7f4;
+  --surface: #ffffff;
+  --line: #e6e5e0;
+  --ink: #15171c;
+  --muted: #6d6f75;
+  --faint: #9a9ba0;
+  --accent: #304ffe;
+  --accent-soft: #edefff;
+  --chip: #f0f0ed;
+
+  --danger: #d9534f;
+  --success: #2e9e5b;
+
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #1b262c;
+    --surface: #24333b;
+    --line: #34454f;
+    --ink: #eaf5fc;
+    --muted: #bbe1fa;
+    --faint: #9fb8c2;
+    --accent: #3282b8;
+    --accent-soft: rgba(50, 130, 184, 0.28);
+    --chip: #2c3c45;
+  }
+}
+
+:root[data-theme='dark'] {
+  --bg: #1b262c;
+  --surface: #24333b;
+  --line: #34454f;
+  --ink: #eaf5fc;
+  --muted: #bbe1fa;
+  --faint: #9fb8c2;
+  --accent: #3282b8;
+  --accent-soft: rgba(50, 130, 184, 0.28);
+  --chip: #2c3c45;
+}
