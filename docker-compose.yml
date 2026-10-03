@@ -27,7 +27,11 @@
 
 services:
   db:
-    image: postgres:16-alpine
+    # Actualizado de 16→17: n8n reportó en runtime que Postgres 16 solo
+    # recibe soporte de compatibilidad, recomienda 17+. Sin datos reales
+    # en el volumen todavía, se actualizó de inmediato en vez de arrastrar
+    # deuda técnica.
+    image: postgres:17-alpine
     container_name: kefa-db
     restart: unless-stopped
     env_file:
@@ -68,7 +72,9 @@ services:
       N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
       N8N_HOST: ${N8N_HOST}
       N8N_PORT: ${N8N_PORT}
-      WEBHOOK_URL: ${N8N_BASE_URL}
+      # Renombrado de WEBHOOK_URL (deprecada) a N8N_WEBHOOK_URL, según
+      # aviso de deprecación real visto en los logs de n8n 2.40.7.
+      N8N_WEBHOOK_URL: ${N8N_BASE_URL}
       # KEFA-ADR-004: backend de BD de n8n en Postgres, no SQLite.
       # Base de datos separada (n8n_db) dentro del mismo servidor Postgres
       # (supuesto técnico, no explícito en la ADR — ver ANÁLISIS).
