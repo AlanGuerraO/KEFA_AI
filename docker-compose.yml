@@ -3,9 +3,10 @@
 # Se omite la clave "version": está deprecada en Docker Compose v2+.
 #
 # Servicios ACTIVOS:
-#   - db      (PostgreSQL)
-#   - n8n     (automatización — KEFA-ADR-004 ✅ APPROVED)
-#   - backend (Django + DRF)
+#   - db       (PostgreSQL)
+#   - n8n      (automatización — KEFA-ADR-004 ✅ APPROVED)
+#   - backend  (Django + DRF)
+#   - frontend (Vite + React)
 #
 # KEFA-ADR-004: imagen oficial docker.n8n.io/n8nio/n8n, versión fijada
 # (nunca "latest"/"next"/"nightly"), backend de BD de n8n en PostgreSQL
@@ -17,10 +18,11 @@
 # su imagen incluye un entrypoint que exporta la variable a partir del
 # Docker secret antes de arrancar Django. Ver backend/docker-entrypoint.sh.
 #
-# Servicio "frontend" queda comentado abajo como plantilla: actívalo
-# cuando exista un Dockerfile real en frontend/. No se genera activo
-# ahora para no inventar estructura que el equipo todavía no ha creado
-# (Integrante 4 - frontend).
+# frontend: VITE_API_URL vive en frontend/.env (no en el .env raíz),
+# ya que lo consume el navegador (código del cliente), no el proceso
+# Docker — debe apuntar a http://localhost:8000 (puerto publicado al
+# host), nunca a "backend" (nombre de red interna de Docker, que el
+# navegador no puede resolver).
 #
 # Variables no sensibles se leen de ".env" (copia ".env.example").
 # La contraseña de Postgres NO va en .env: ver secrets/postgres_password.txt.example
@@ -112,7 +114,12 @@ services:
     secrets:
       - postgres_password
     ports:
-      - "8000:8000"
+      # 8000 y 8001 caen dentro de un rango excluido por Windows/Hyper-V
+      # en la máquina de Alan (netsh interface ipv4 show excludedportrange
+      # → 7535-8034 excluido). 8080 está fuera de ese rango y del otro
+      # rango excluido (50000-50059). El contenedor sigue usando 8000
+      # internamente, backend/manage.py runserver no cambia.
+      - "8080:8000"
     volumes:
       - ./backend:/app
     depends_on:
@@ -121,26 +128,24 @@ services:
     networks:
       - kefa-network
 
-  # ------------------------------------------------------------------
-  # PENDIENTE DE ACTIVAR: requiere frontend/Dockerfile real (Vite +
-  # React), que todavía no existe en el repo. Descomentar cuando
-  # el Integrante 4 (Alan) tenga la app de frontend creada.
-  # ------------------------------------------------------------------
-  # frontend:
-  #   build:
-  #     context: ./frontend
-  #     dockerfile: Dockerfile
-  #   container_name: kefa-frontend
-  #   restart: unless-stopped
-  #   ports:
-  #     - "5173:5173"
-  #   volumes:
-  #     - ./frontend:/app
-  #     - /app/node_modules
-  #   depends_on:
-  #     - backend
-  #   networks:
-  #     - kefa-network
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: kefa-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      # Volumen anónimo: evita que el bind-mount de arriba sobreescriba
+      # el node_modules instalado DENTRO de la imagen (Linux) con el de
+      # tu host (Windows/macOS), que puede tener binarios incompatibles.
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - kefa-network
 
 volumes:
   postgres_data:
