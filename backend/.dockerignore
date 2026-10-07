@@ -1,21 +1,7 @@
-# Nunca debe entrar a la imagen: contiene secretos reales
+node_modules/
+dist/
 .env
-
-# Entorno virtual local (90+ MB, y construido para el SO del
-# desarrollador, no para el contenedor Linux)
-.venv/
-
-# Basura de Python
-__pycache__/
-*.pyc
-*.pyo
-*.sqlite3
-
-# Control de versiones y editor
 .git/
 .gitignore
 .vscode/
 .idea/
-
-# Cache de pruebas
-.pytest_cache/
