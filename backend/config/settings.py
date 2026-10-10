@@ -35,12 +35,22 @@ ALLOWED_HOSTS = [
     if host.strip()
 ]
 
+# CORS: la variable ya existía en .env/.env.example pero nunca se leía
+# aquí (gap documentado en control-de-estado.md). django-cors-headers
+# agregado a INSTALLED_APPS y MIDDLEWARE arriba.
+CORS_ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
+    if origin.strip()
+]
+
 # Application definition
 
 INSTALLED_APPS = [
     "corsheaders",
     'users',
     'rest_framework',
+    'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -52,6 +62,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
