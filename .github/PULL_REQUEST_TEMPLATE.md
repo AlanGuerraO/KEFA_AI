@@ -33,7 +33,7 @@ Se agrego una guia de pasos para poder clonar de manera eficiente el repositorio
 - [ ] La funcionalidad fue probada localmente
 - [ ] La documentación fue actualizada si corresponde
 - [ ] El commit sigue la convención del proyecto (`tipo(KEFA-XXX): descripción`)
-- [ ] El PR referencia el ticket correspondiente en Jira/Trello
+- [ ] El PR referencia el ticket correspondiente en Jira
 - [ ] Si este PR incluye workflows de n8n (`n8n/workflows/`), se verificó que el JSON exportado no contenga credenciales ni tokens embebidos (ver `n8n/README.md`)
 
 ## Revisión requerida
