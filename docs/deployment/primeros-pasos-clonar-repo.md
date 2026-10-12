@@ -2,6 +2,8 @@
 
 Guía para cualquier integrante del equipo que clone el repositorio por primera vez. Sigue estos pasos en orden — evita los errores ya detectados durante el setup inicial (Chat 08).
 
+**Última actualización:** 11 de octubre de 2026. Ubicación: `docs/deployment/primeros-pasos-clonar-repo.md`.
+
 ---
 
 ## 1. Requisitos previos
@@ -38,7 +40,7 @@ git checkout develop
 git pull origin develop
 ```
 
-> `main` se mantiene solo con el README inicial hasta que llegue el momento de subir el MVP. Todo el desarrollo activo ocurre en `develop` y en ramas `feature/*`/`bugfix/*`.
+> `main` queda reservada para versiones estables. Todo el desarrollo activo ocurre en `develop` y en ramas `feature/*`/`bugfix/*`.
 
 ---
 
@@ -106,7 +108,7 @@ Si **ninguno de los dos casos se comporta como se espera** (por ejemplo, el comm
 
 ## 5. Antes de empezar a trabajar en algo
 
-**Nunca trabajes directo sobre `develop` ni sobre `main`** — ambas están protegidas (requieren Pull Request + 1 aprobación, no aceptan push directo).
+**Nunca trabajes directo sobre `develop` ni sobre `main`** — ambas están protegidas (requieren Pull Request y aprobación, no aceptan push directo). Las reglas de `main` se modificaron recientemente: consulta `docs/deployment/git-workflow.md` para el detalle vigente.
 
 ```bash
 git checkout develop
@@ -114,7 +116,7 @@ git pull origin develop
 git checkout -b feature/KEFA-XXX-descripcion-corta
 ```
 
-Reemplaza `KEFA-XXX` por el número real del ticket en Jira/Trello. No se crean ramas sin ticket ni por integrante — solo por tarea real.
+Reemplaza `KEFA-XXX` por el número real del ticket en Jira. No se crean ramas sin ticket ni por integrante — solo por tarea real.
 
 ---
 
@@ -175,6 +177,67 @@ Si tu rama aparece en esa lista, es seguro borrarla. Si `git branch -d` (minúsc
 
 ---
 
+## 9. Levantar el entorno de desarrollo con Docker
+
+> **Estado:** este flujo se basa en los archivos del repositorio, pero aún **no se verificó de punta a punta** (Jira KEFA-55 "En curso", subtarea KEFA-62 "Documentar comandos" pendiente). Si algo falla, avisa en el chat 08 (DevOps).
+
+**Requisitos:** Docker con Compose v2 (`docker compose version`).
+
+### Paso 1 — Variables de entorno
+
+Los archivos reales (`.env`, `frontend/.env`) **no se versionan**; solo se versionan los `.example`.
+
+```bash
+cp .env.example .env
+cp frontend/.env.example frontend/.env
+```
+
+Edita `.env` y reemplaza los `changeme-*` por valores reales (como mínimo `SECRET_KEY` y `N8N_ENCRYPTION_KEY`). No pegues claves reales en chats ni las subas a Git.
+
+> **Importante:** si tu `.env` contiene la línea `POSTGRES_PASSWORD=...`, **bórrala**. La contraseña de Postgres va solo en el secret del paso 2; si ambas están definidas, el contenedor de Postgres se niega a arrancar (inconsistencia conocida de `.env.example`, ver `control-de-estado.md`, H9).
+
+### Paso 2 — Secreto de PostgreSQL
+
+La contraseña de Postgres va en un Docker secret, no en `.env`:
+
+```bash
+cp secrets/postgres_password.txt.example secrets/postgres_password.txt
+```
+
+Edita `secrets/postgres_password.txt` con la contraseña real (una sola línea). La carpeta `secrets/` está en `.gitignore`, salvo los archivos `*.example`.
+
+### Paso 3 — Levantar los servicios
+
+```bash
+docker compose up --build
+```
+
+Servicios definidos en `docker-compose.yml`:
+
+| Servicio | Contenedor | Puerto en el host |
+|---|---|---|
+| `db` (PostgreSQL 17) | `kefa-db` | 5432 |
+| `n8n` | `kefa-n8n` | `N8N_PORT` (5678 por defecto) |
+| `backend` (Django) | `kefa-backend` | **8080** (mapeado a 8000 dentro del contenedor) |
+| `frontend` (Vite) | `kefa-frontend` | 5173 |
+
+### Paso 4 — Comprobar que funciona
+
+- Backend: abre `http://localhost:8080/api/health/`; debe responder `{"status": "ok"}`.
+- Frontend: abre `http://localhost:5173`.
+- n8n: abre `http://localhost:5678`.
+
+### Notas importantes
+
+- **Puerto del backend.** El compose publica el backend en `8080` porque en una máquina Windows del equipo el rango 7535-8034 está excluido por Hyper-V (se ve con `netsh interface ipv4 show excludedportrange protocol=tcp`). Por eso `VITE_API_URL` en `frontend/.env` debe apuntar al puerto **publicado** (`http://localhost:8080`), aunque `frontend/.env.example` indique `8000`. Es una inconsistencia conocida (ver `control-de-estado.md`, H5).
+- **`VITE_API_URL` nunca debe apuntar a `backend`** (nombre de red interna de Docker): el navegador no puede resolverlo.
+- **CORS.** `CORS_ALLOWED_ORIGINS` en `.env` debe incluir el origen del frontend (`http://localhost:5173`).
+- **Base de datos de n8n.** El script `docker/postgres/init-n8n-db.sh` crea `n8n_db` solo la primera vez que se crea el volumen de Postgres. Si cambias la configuración después, recrea el volumen (`docker compose down -v`; **esto borra los datos locales**).
+- **Pruebas del backend.** Con las dependencias instaladas y una base de datos disponible: `python backend/manage.py test config users -v 2`. Las pruebas del orquestador no necesitan base de datos: desde `backend/`, `python -m unittest orchestrator.tests -v`.
+- Correr el backend **sin Docker** (`backend/.env` con `POSTGRES_HOST=localhost`) todavía no es un flujo oficial.
+
+---
+
 ## Resumen de comandos que NO existen fuera de Git Bash (en Windows)
 
 | Comando | Dónde funciona |
@@ -193,3 +256,4 @@ Si tu rama aparece en esa lista, es seguro borrarla. Si `git branch -d` (minúsc
 - [ ] Nunca trabajo directo sobre `main`/`develop`, siempre en `feature/KEFA-XXX-...`
 - [ ] Verifico el `base:` del PR antes de crearlo
 - [ ] Confirmo con `--merged` antes de borrar cualquier rama
+- [ ] Copié `.env`, `frontend/.env` y `secrets/postgres_password.txt` desde sus `.example` y `docker compose up --build` levanta los 4 servicios

@@ -96,7 +96,7 @@ Aunque cada integrante tendrá un área principal, **los cuatro participarán en
 | Autenticación           | JWT + OAuth 2.0                         | **TODOS** |
 | Contenedores            | Docker + Docker Compose                 | Alan |
 | Control de versiones    | Git + GitHub                            | **TODOS** |
-| Gestión del proyecto    | Trello                                  | **TODOS** |
+| Gestión del proyecto    | Jira                                    | **TODOS** |
 
 ---
 
@@ -158,7 +158,7 @@ El primer prototipo permitirá:
 
 ## Metodología
 
-El desarrollo se gestionará mediante **Git/GitHub y Trello**, utilizando tareas, sprints, ramas de desarrollo, revisión de código y pruebas.
+El desarrollo se gestionará mediante **Git/GitHub y Jira**, utilizando tareas, sprints, ramas de desarrollo, revisión de código y pruebas.
 
 El proyecto seguirá un enfoque incremental, priorizando primero un **MVP funcional** y posteriormente agregando funcionalidades adicionales.
 

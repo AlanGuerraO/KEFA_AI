@@ -15,7 +15,7 @@ bugfix/KEFA-XXX-descripcion
 
 Reglas:
 
-- Toda rama `feature/*` o `bugfix/*` debe corresponder a una tarea real registrada en Jira/Trello (`KEFA-XXX`).
+- Toda rama `feature/*` o `bugfix/*` debe corresponder a una tarea real registrada en Jira (`KEFA-XXX`).
 - No se crean ramas por integrante ni por preguntas o consultas de contexto técnico.
 - `feature/*` y `bugfix/*` se integran primero a `develop`, nunca directo a `main`.
 - `main` y `develop` están protegidas (ver sección 5).
