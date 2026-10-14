@@ -1,0 +1,21 @@
+# Dependencias: se instalan DENTRO de la imagen con "npm install"
+# (las del host pueden ser de otro sistema operativo y pesan decenas de MB)
+node_modules/
+
+# Salida de build
+dist/
+.vite/
+
+# Nunca debe entrar a la imagen: puede contener configuración local
+# (en ejecución, el bind-mount ./frontend:/app vuelve a exponer frontend/.env
+# dentro del contenedor, y eso es lo esperado: Vite lo lee desde ahí)
+.env
+
+# Control de versiones y editor
+.git/
+.gitignore
+.vscode/
+.idea/
+
+# Logs de npm
+npm-debug.log*
