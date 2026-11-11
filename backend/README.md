@@ -79,14 +79,16 @@ backend/.venv/Scripts/python.exe backend/manage.py runserver
 - Administración: http://127.0.0.1:8000/admin/
 - Usuario actual: http://127.0.0.1:8000/api/users/me/
 
-El endpoint del usuario actual requiere autenticación. Se puede
-comprobar en el navegador después de iniciar sesión en el administrador.
-JWT todavía no está configurado.
+El endpoint del usuario actual requiere `Authorization: Bearer <access>`.
+El backend incluido contiene registro de cuentas, JWT login/refresh/verify,
+y consulta del usuario actual mediante `/api/users/`.
+La consulta a través del administrador Django no equivale a autenticación JWT.
 
 El servidor runserver y DEBUG=True son para desarrollo local.
 
 ## Alcance
 
-Esta base incluye configuración PostgreSQL y un modelo de usuario
-personalizado que deberán revisarse también en sus tickets respectivos.
-No implica que las tareas de PostgreSQL y autenticación estén completas.
+La configuración PostgreSQL, JWT y el modelo de usuario están presentes en
+el código. El sistema completo todavía necesita historial, orquestación,
+workflows de n8n, autorización OAuth y pruebas de integración. Ver la
+revisión en `docs/revisiones/revision-2026-11-10.md`.
