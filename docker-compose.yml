@@ -111,8 +111,12 @@ services:
       # soporta _FILE): el entrypoint de la imagen la exporta a partir
       # de este secreto antes de arrancar Django (KEFA-ADR-004).
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+      N8N_WEBHOOK_URL: http://n8n:5678/webhook/kefa-calendar-tasks
+      N8N_BASIC_AUTH_USER: kefa_backend
+      N8N_BASIC_AUTH_PASSWORD_FILE: /run/secrets/n8n_basic_auth_password
     secrets:
       - postgres_password
+      - n8n_basic_auth_password
     ports:
       # 8000 y 8001 caen dentro de un rango excluido por Windows/Hyper-V
       # en la máquina de Alan (netsh interface ipv4 show excludedportrange
@@ -158,3 +162,5 @@ networks:
 secrets:
   postgres_password:
     file: ./secrets/postgres_password.txt
+  n8n_basic_auth_password:
+    file: ./secrets/n8n_basic_auth_password.txt
