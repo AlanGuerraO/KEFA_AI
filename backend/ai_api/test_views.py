@@ -13,6 +13,7 @@ from orchestrator.decision_flow import (
     OrchestratorDecision,
 )
 
+   
 
 class TestToolCallingEndpoint(SimpleTestCase):
 
@@ -22,15 +23,15 @@ class TestToolCallingEndpoint(SimpleTestCase):
         self.confirmacion_url = "/api/ai/confirmar-accion/"
 
     def crear_usuario(self):
-        return type(
-            "UsuarioPrueba",
-            (),
-            {
-                "pk": 1,
-                "is_authenticated": True,
-                "is_active": True,
-            },
-        )()
+        from unittest.mock import Mock
+
+        usuario = Mock()
+        usuario.pk = 1
+        usuario.is_authenticated = True
+        usuario.is_active = True
+        usuario.get_all_permissions.return_value = set()
+
+        return usuario
 
     def test_requiere_autenticacion(self):
         response = self.client.post(
@@ -40,6 +41,7 @@ class TestToolCallingEndpoint(SimpleTestCase):
         )
 
         self.assertEqual(response.status_code, 401)
+
 
     @patch("ai_api.views.ToolCallingBridge")
     def test_no_procesa_sin_autenticacion(self, bridge_mock):
@@ -228,3 +230,98 @@ class TestToolCallingEndpoint(SimpleTestCase):
         # No debe ejecutar operaciones sensibles.
         self.assertEqual(response.status_code, 501)
         self.assertIn("error", response.data)
+
+
+
+    
+    @patch("ai_api.views.confirmation_store")
+    def test_cancelacion_usuario_correcto(self, store_mock):
+        from ai_api.views import confirmar_accion
+
+        solicitud = type("Solicitud", (), {
+            "tool_name": "calendar.delete_event",
+            "parameters": {"event_id": "evento_123"},
+        })()
+
+        store_mock.get.return_value = solicitud
+        store_mock.consume.return_value = solicitud
+
+        request = APIRequestFactory().post(
+            self.confirmacion_url,
+            {
+                "request_id": "solicitud_prueba_123",
+                "respuesta": "cancelar",
+            },
+            format="json",
+        )
+        force_authenticate(request, user=self.crear_usuario())
+
+        response = confirmar_accion(request)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["status"], "cancelled")
+        store_mock.consume.assert_called_once_with(
+            "solicitud_prueba_123",
+            "1",
+            tool_name="calendar.delete_event",
+            parameters={"event_id": "evento_123"},
+        )
+
+    @patch("ai_api.views.confirmation_store")
+    def test_cancelacion_usuario_incorrecto(self, store_mock):
+        from ai_api.views import confirmar_accion
+
+        solicitud = type("Solicitud", (), {
+            "tool_name": "calendar.delete_event",
+            "parameters": {"event_id": "evento_123"},
+        })()
+
+        store_mock.get.return_value = solicitud
+        store_mock.consume.return_value = None
+
+        request = APIRequestFactory().post(
+            self.confirmacion_url,
+            {
+                "request_id": "solicitud_prueba_123",
+                "respuesta": "cancelar",
+            },
+            format="json",
+        )
+        force_authenticate(request, user=self.crear_usuario())
+
+        response = confirmar_accion(request)
+
+        self.assertEqual(response.status_code, 400)
+        store_mock.consume.assert_called_once()
+
+    @patch("ai_api.views.confirmation_store")
+    def test_cancelacion_no_reutilizable(self, store_mock):
+        from ai_api.views import confirmar_accion
+
+        solicitud = type("Solicitud", (), {
+            "tool_name": "calendar.delete_event",
+            "parameters": {"event_id": "evento_123"},
+        })()
+
+        store_mock.get.return_value = solicitud
+        store_mock.consume.side_effect = [solicitud, None]
+
+        def enviar_cancelacion():
+            request = APIRequestFactory().post(
+                self.confirmacion_url,
+                {
+                    "request_id": "solicitud_prueba_123",
+                    "respuesta": "cancelar",
+                },
+                format="json",
+            )
+            force_authenticate(request, user=self.crear_usuario())
+            return confirmar_accion(request)
+
+        primera = enviar_cancelacion()
+        segunda = enviar_cancelacion()
+
+        self.assertEqual(primera.status_code, 200)
+        self.assertEqual(segunda.status_code, 400)
+        self.assertEqual(store_mock.consume.call_count, 2)
+

@@ -12,6 +12,8 @@ from orchestrator.tool_calling_bridge import ToolCallingBridge
 
 from orchestrator.confirmation_store import confirmation_store
 
+from orchestrator.user_permissions import get_kefa_permissions
+
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
@@ -25,11 +27,12 @@ def tool_calling(request):
         )
 
     bridge = ToolCallingBridge()
+    granted_permissions = get_kefa_permissions(request.user)
 
     try:
         decisiones = bridge.procesar(
             mensaje,
-            granted_permissions=[],
+            granted_permissions=granted_permissions,
             confirmed=False,
             user_id=str(request.user.pk),
         )
