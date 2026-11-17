@@ -6,4 +6,5 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/health/", health, name="health"),
     path("api/users/", include("users.urls")),
+    path("api/ai/", include("ai_api.urls")),
 ]
