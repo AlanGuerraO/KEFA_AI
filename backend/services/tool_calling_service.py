@@ -48,8 +48,15 @@ class ToolCallingService:
             "ANTHROPIC_MODEL", "claude-sonnet-4-5"
         )
 
+
     def procesar(self, mensaje, granted_permissions=None,
                  confirmed=False):
+        if confirmed:
+            raise ValueError(
+                "La confirmación debe validarse mediante una solicitud autorizada."
+            )
+
+        
         if not isinstance(mensaje, str) or not mensaje.strip():
             raise ValueError("El mensaje no puede estar vacío.")
 
@@ -115,12 +122,15 @@ class ToolCallingService:
                     "status": "prepared",
                     "payload": payload,
                 })
+           
             except ToolCatalogError as error:
                 resultados.append({
                     "type": "error",
                     "tool": nombre_real,
+                    "parameters": bloque.input,
                     "code": type(error).__name__,
                     "message": str(error),
                 })
+
 
         return resultados

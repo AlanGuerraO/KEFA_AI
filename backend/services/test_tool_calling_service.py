@@ -3,6 +3,7 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock
 
+
 from services.tool_calling_service import (
     ToolCallingService,
     build_claude_tools,
