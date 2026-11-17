@@ -20,7 +20,7 @@
 #
 # frontend: VITE_API_URL vive en frontend/.env (no en el .env raíz),
 # ya que lo consume el navegador (código del cliente), no el proceso
-# Docker — debe apuntar a http://localhost:8000 (puerto publicado al
+# Docker — debe apuntar a http://localhost:8080 (puerto publicado al
 # host), nunca a "backend" (nombre de red interna de Docker, que el
 # navegador no puede resolver).
 #

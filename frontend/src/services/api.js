@@ -10,7 +10,8 @@ async function request(path, options = {}) {
         ...options.headers,
       },
     });
-  } catch {
+  } catch (cause) {
+    if (cause?.name === 'AbortError') throw cause;
     const error = new Error('No se pudo conectar con KEFA AI. Comprueba tu conexión y que el backend esté activo.');
     error.code = 'NETWORK_ERROR';
     throw error;
@@ -22,7 +23,9 @@ async function request(path, options = {}) {
     : null;
 
   if (!response.ok) {
-    const message = payload?.detail
+    const message = payload?.error
+      || payload?.message
+      || payload?.detail
       || payload?.non_field_errors?.[0]
       || (response.status === 401 ? 'Usuario o contraseña incorrectos.' : null)
       || `La solicitud falló (${response.status}).`;
@@ -63,5 +66,30 @@ export function refreshToken(refresh) {
 export function getCurrentUser(token) {
   return request('/api/users/me/', {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+}
+
+/** API de orquestación actual: POST /api/ai/tool-calling/ */
+export function sendInstruction(token, message, signal) {
+  if (!token) throw new Error('Inicia sesión para enviar instrucciones.');
+  return request('/api/ai/tool-calling/', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ mensaje: message }),
+    signal,
+  });
+}
+
+/** La respuesta confirmar no ejecuta todavía en el backend actual (HTTP 501). */
+export function respondToConfirmation(token, requestId, answer, signal) {
+  if (!token) throw new Error('Inicia sesión para responder.');
+  if (!['confirmar', 'rechazar', 'cancelar'].includes(answer)) {
+    throw new Error('Respuesta de confirmación inválida.');
+  }
+  return request('/api/ai/confirmar-accion/', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ request_id: requestId, respuesta: answer }),
+    signal,
   });
 }

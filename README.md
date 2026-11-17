@@ -1,5 +1,8 @@
 # KEFA AI
 
+> **Entrega del frontend (17/11/2026):** la página Conversaciones ya consume la API de IA y gestiona confirmaciones y actividad de sesión. La ejecución real en n8n requiere trabajo de backend. Revisa [LEEME_FRONTEND_COMPLETO.md](LEEME_FRONTEND_COMPLETO.md) y [frontend/README.md](frontend/README.md).
+
+
 ### Orquestador Personal Inteligente para Automatización de Tareas
 
 ## Descripción

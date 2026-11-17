@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
+import { ActivityProvider } from '../context/ActivityContext';
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
@@ -15,7 +16,7 @@ export default function AppLayout() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [sidebarOpen]);
   return (
-    <div className="app-shell">
+    <ActivityProvider><div className="app-shell">
       <a className="skip-link" href="#contenido">Saltar al contenido</a>
       <Sidebar open={sidebarOpen} close={() => setSidebarOpen(false)} activePath={location.pathname} />
       {sidebarOpen && <button className="sidebar-scrim" type="button" aria-label="Cerrar menú" onClick={() => setSidebarOpen(false)} />}
@@ -23,6 +24,6 @@ export default function AppLayout() {
         <Topbar openMenu={() => setSidebarOpen(true)} />
         <main id="contenido" className="content"><Outlet /></main>
       </div>
-    </div>
+    </div></ActivityProvider>
   );
 }

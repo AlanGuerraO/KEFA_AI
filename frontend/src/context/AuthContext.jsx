@@ -33,6 +33,15 @@ export function AuthProvider({ children }) {
   const sessionVersion = useRef(0);
 
   const logout = useCallback(() => {
+    // El historial contiene instrucciones privadas: borrarlo al cerrar sesión.
+    try {
+      const keys = [];
+      for (let i = 0; i < window.sessionStorage.length; i++) {
+        const key = window.sessionStorage.key(i);
+        if (key?.startsWith('kefa-session-history:')) keys.push(key);
+      }
+      keys.forEach(key => window.sessionStorage.removeItem(key));
+    } catch { /* El almacenamiento puede estar restringido. */ }
     sessionVersion.current += 1;
     clearSession();
     setUser(null);
@@ -104,8 +113,38 @@ export function AuthProvider({ children }) {
     reloadUser();
   }, [reloadUser]);
 
-  const value = useMemo(() => ({ user, status, authenticate, logout, reloadUser }),
-    [user, status, authenticate, logout, reloadUser]);
+  // Renovar JWT una sola vez ante HTTP 401 durante una acción autenticada.
+  const requestWithAuth = useCallback(async callback => {
+    const version = sessionVersion.current;
+    const session = readSession();
+    if (!session.access) { logout(); throw new Error('Inicia sesión para continuar.'); }
+    try {
+      return await callback(session.access);
+    } catch (error) {
+      if (error.status !== 401 || !session.refresh) throw error;
+    }
+
+    let tokens;
+    try {
+      tokens = await refreshToken(session.refresh);
+    } catch (error) {
+      if (error.status === 401) logout();
+      throw error;
+    }
+    if (!tokens?.access || version !== sessionVersion.current) {
+      throw new Error('La sesión ha cambiado o no se pudo renovar.');
+    }
+    saveSession(tokens.access, tokens.refresh || session.refresh);
+    try {
+      return await callback(tokens.access);
+    } catch (error) {
+      if (error.status === 401) logout();
+      throw error;
+    }
+  }, [logout]);
+
+  const value = useMemo(() => ({ user, status, authenticate, logout, reloadUser, requestWithAuth }),
+    [user, status, authenticate, logout, reloadUser, requestWithAuth]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
