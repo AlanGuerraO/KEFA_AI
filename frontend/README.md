@@ -1,65 +1,96 @@
-# KEFA AI — Frontend (revisión de la fase 2)
+# KEFA AI — Frontend conectado al orquestador (KEFA-192)
 
-Interfaz **React 18 + Vite 5**, JavaScript/JSX y CSS modular sin librerías adicionales de componentes.
+React 18 + Vite 5, JavaScript/JSX y CSS adaptable, con estilos claro y oscuro.
 
-## Incluye
+## Qué está implementado
 
-- Inicio de sesión con JWT, registro, renovación de token y perfil obtenido de Django.
-- Layout profesional y adaptable: menú lateral, cabecera, tarjetas, tema claro/oscuro.
-- **Resumen**: estado real de funcionalidades e introducción a tareas previstas (sin cifras inventadas).
-- **Conversaciones**: preparación y copia local de instrucciones; el envío a la IA **aún no existe**.
-- **Actividad**: pantalla para futuras auditorías; no presenta registros falsos.
-- **Integraciones**: estado claramente pendiente de Telegram, Calendar, Tasks y Notion.
-- **Configuración**: tema persistente y prueba real de `GET /api/health/`.
-- **Mi cuenta**: perfil obtenido de `GET /api/users/me/` y actualización manual.
-- Rutas de navegación protegidas; menú móvil y controles accesibles.
+| Pantalla | Funciones |
+|---|---|
+| `/login` y `/registro` | Autenticación con API Django, JWT y manejo de errores |
+| `/dashboard` | Resumen de las solicitudes de la sesión y accesos directos reales |
+| `/conversaciones` | Envío real a `POST /api/ai/tool-calling/`; resultados de herramientas, errores, estados, solicitud de confirmación/cancelación, ejemplos y diseño tipo chat |
+| `/actividad` | Consulta, filtros, búsqueda, exportación JSON y eliminación del historial **local de esta pestaña** |
+| `/integraciones` | Servicios, requisitos de conexión y estado **no verificado**, sin controles OAuth falsos |
+| `/configuracion` | Tema claro/oscuro, prueba real de `/api/health/` y borrado de historial |
+| `/cuenta` | Datos del usuario y recarga autenticada desde `/api/users/me/` |
 
-**No incluye todavía** ejecución de herramientas, OAuth de Google, historial persistido, notificaciones ni APIs del orquestador. El frontend las marca como pendientes y no simula resultados.
+El frontend renueva el JWT cuando el servidor devuelve 401 (si existe un refresh token válido), no envía contraseñas de Google o n8n y muestra estados de carga, error, confirmación y resultados. El historial visual usa `sessionStorage`, está separado por usuario y se borra al cerrar sesión.
 
-## Instalar y ejecutar
+## IMPORTANTE: límites del backend actual
 
-Se recomienda Node 22 o la versión compatible definida por el equipo.
+El frontend está preparado y **hace peticiones reales**, pero la versión 3 del backend **todavía no ejecuta las herramientas en n8n**. `POST /api/ai/tool-calling/` devuelve, por ejemplo, `status: "prepared"`, que **NO** significa tarea creada. Los botones de confirmación llaman a la API real, pero confirmar devuelve `HTTP 501` en esta versión; cancelar sí puede responder `cancelled`.
+
+Tampoco existe una API de historial persistente ni de estado OAuth por usuario. Actividad es un registro **local** en la pestaña; Integraciones muestra pasos de configuración, no conexiones verificadas.
+
+### Contrato del frontend
+
+```http
+POST /api/ai/tool-calling/
+Authorization: Bearer <JWT>
+Content-Type: application/json
+
+{"mensaje": "Crea una tarea llamada Prueba del proyecto"}
+```
+
+Respuesta del backend de la versión 3:
+
+```json
+{
+  "resultados": [
+    {
+      "decision": "execute",
+      "tool": "tasks.create",
+      "reason": "Herramienta validada y preparada.",
+      "status": "prepared",
+      "request_id": null
+    }
+  ]
+}
+```
+
+Para responder a una solicitud pendiente:
+
+```http
+POST /api/ai/confirmar-accion/
+Authorization: Bearer <JWT>
+Content-Type: application/json
+
+{"request_id": "ID_DEVUELTO_POR_BACKEND", "respuesta": "cancelar"}
+```
+
+Valores aceptados: `confirmar`, `rechazar`, `cancelar`. La autorización real debe seguir validándose en Django, no desde React.
+
+## Inicio rápido
+
+1. Copia `frontend/.env.example` como `frontend/.env` (sin subir ese archivo a Git).
+2. Verifica `VITE_API_URL=http://localhost:8080` si ese es el puerto publicado por Docker.
+3. Ejecuta:
 
 ```bash
 cd frontend
-cp .env.example .env
 npm ci
+npm test
 npm run dev
 ```
 
-Si usas Docker con el puerto del backend `8080`, la variable debe ser:
+Abre `http://localhost:5173`, registra o inicia sesión y entra a Conversaciones.
 
-```dotenv
-VITE_API_URL=http://localhost:8080
-```
-
-Para ejecutar todas las pruebas frontend disponibles y compilar:
+Para verificar compilación de producción en un equipo con dependencias disponibles:
 
 ```bash
-npm test
 npm run build
 ```
 
-`npm test` utiliza el ejecutor de Node y prueba el cliente HTTP sin depender de un servidor ni de credenciales.
+Desde el proyecto completo con Docker configurado: `docker compose up -d --build`, `docker compose run --rm backend python manage.py migrate`. Si no existen los archivos de secretos, créalos a partir de las plantillas; nunca publiques contraseñas.
 
-## Rutas
+## Pruebas
 
-| Ruta | Pantalla | Estado |
-|---|---|---|
-| `/login` | Inicio de sesión | Conectada a API |
-| `/registro` | Registro | Conectada a API |
-| `/dashboard` | Resumen | Presentación real de estado |
-| `/conversaciones` | Conversaciones | Redacción local; IA pendiente |
-| `/actividad` | Actividad | UI lista; API pendiente |
-| `/integraciones` | Integraciones | UI lista; OAuth pendiente |
-| `/configuracion` | Configuración | Tema y healthcheck funcionales |
-| `/cuenta` | Mi cuenta | Perfil real conectado |
+`npm test` ejecuta pruebas unitarias de cliente HTTP y normalización de respuestas (incluida la distinción entre preparado y ejecutado). No reemplazan una prueba real con Django, Claude y n8n.
 
-## Seguridad
+## Responsabilidades de la siguiente fase
 
-- No ingreses claves privadas ni tokens OAuth en el frontend.
-- El login usa `sessionStorage` para JWT en esta versión. Debe mantenerse una **revisión de XSS/CSP y almacenamiento de sesión** antes de desplegar a internet.
-- Confirmaciones de acciones sensibles deben validarse en backend, nunca solo en la interfaz.
-- La protección del frontend no sustituye autorización y permisos por objeto en DRF.
+- Kevin/Fanny: ejecutar únicamente herramientas autorizadas y devolver su resultado verificable. Terminar confirmaciones positivas, permisos por usuario y auditoría persistente.
+- Eric: verificar webhook de n8n, credenciales autorizadas y respuesta de Google Tasks/Calendar.
+- Alan: validar visualmente en Docker, corregir cualquier diferencia de contrato y realizar el PR de KEFA-192 hacia `develop`.
 
-Ver `docs/revisiones/revision-2026-11-10.md` para hallazgos y siguientes pasos.
+**Seguridad:** La sesión usa `sessionStorage` para JWT. Revisar CSP/XSS, expiraciones, errores de API y CSRF/CORS según el método de autenticación antes de desplegar fuera del laboratorio.
