@@ -1,10 +1,10 @@
 {
-  "name": "My workflow copy copy",
+  "name": "KEFA AI - Google Calendar y Tasks",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "57c96fce-342e-42f7-aa24-dc08603b36bc",
+        "path": "kefa-calendar-tasks",
         "authentication": "basicAuth",
         "options": {}
       },
@@ -16,7 +16,7 @@
       ],
       "id": "948e662b-56cd-460b-815f-9efa5e84d2b8",
       "name": "Webhook",
-      "webhookId": "57c96fce-342e-42f7-aa24-dc08603b36bc"
+      "webhookId": "kefa-calendar-tasks"
     },
     {
       "parameters": {
