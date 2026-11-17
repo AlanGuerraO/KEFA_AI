@@ -1,67 +1,65 @@
-# KEFA AI — Frontend
+# KEFA AI — Frontend (revisión de la fase 2)
 
-Proyecto Vite + React (JavaScript). Implementa el diseño ya definido:
-acento índigo + Space Grotesk/IBM Plex Sans en modo claro, paleta de
-identidad de marca en modo oscuro (ver `src/styles/tokens.css`).
+Interfaz **React 18 + Vite 5**, JavaScript/JSX y CSS modular sin librerías adicionales de componentes.
 
-## Requisitos
+## Incluye
 
-- Node.js 18 o superior (recomendado 20 LTS).
-- Backend corriendo en `http://localhost:8000` (o la URL que definas en `.env`).
+- Inicio de sesión con JWT, registro, renovación de token y perfil obtenido de Django.
+- Layout profesional y adaptable: menú lateral, cabecera, tarjetas, tema claro/oscuro.
+- **Resumen**: estado real de funcionalidades e introducción a tareas previstas (sin cifras inventadas).
+- **Conversaciones**: preparación y copia local de instrucciones; el envío a la IA **aún no existe**.
+- **Actividad**: pantalla para futuras auditorías; no presenta registros falsos.
+- **Integraciones**: estado claramente pendiente de Telegram, Calendar, Tasks y Notion.
+- **Configuración**: tema persistente y prueba real de `GET /api/health/`.
+- **Mi cuenta**: perfil obtenido de `GET /api/users/me/` y actualización manual.
+- Rutas de navegación protegidas; menú móvil y controles accesibles.
 
-## Puesta en marcha
+**No incluye todavía** ejecución de herramientas, OAuth de Google, historial persistido, notificaciones ni APIs del orquestador. El frontend las marca como pendientes y no simula resultados.
 
-Este contenedor no tiene salida a internet, así que `npm install` debe
-correrse en tu máquina, no aquí.
+## Instalar y ejecutar
+
+Se recomienda Node 22 o la versión compatible definida por el equipo.
 
 ```bash
 cd frontend
-cp .env.example .env     # ajusta VITE_API_URL si tu backend no usa el puerto 8000
-npm install
+cp .env.example .env
+npm ci
 npm run dev
 ```
 
-Abre `http://localhost:5173`. La pantalla de login redirige a `/dashboard`
-(todavía sin autenticación real — ver los `TODO(backend)` en
-`src/App.jsx` y `src/pages/Login.jsx`).
+Si usas Docker con el puerto del backend `8080`, la variable debe ser:
 
-El punto (verde/rojo) junto al botón de tema en el dashboard confirma si
-`GET /api/health/` responde — así validamos la integración CORS end-to-end
-sin construir nada extra.
-
-## Scripts
-
-- `npm run dev` — servidor de desarrollo (puerto 5173).
-- `npm run build` — build de producción en `dist/`.
-- `npm run preview` — sirve el build de `dist/` localmente.
-
-## Estructura
-
-```text
-src/
-├── components/   Sidebar, Topbar, Logo, ThemeToggle, StatusDot
-├── context/       ThemeContext (claro/oscuro, persistido en localStorage)
-├── pages/         Login, Dashboard, Placeholder (rutas aún no construidas)
-├── services/      api.js — cliente fetch hacia el backend
-└── styles/        tokens.css (colores/tipografía) + global.css
+```dotenv
+VITE_API_URL=http://localhost:8080
 ```
 
-## Decisiones tomadas en esta sesión
+Para ejecutar todas las pruebas frontend disponibles y compilar:
 
-- **JavaScript**, no TypeScript — se puede migrar después si el equipo lo
-  prefiere; no hay nada que lo impida estructuralmente.
-- **react-router-dom** para las rutas.
-- **fetch nativo** como cliente HTTP (sin axios) — son pocos endpoints por
-  ahora; si crece la complejidad (interceptores, refresh de token), vale la
-  pena reconsiderar.
-- Sin Tailwind ni librería de componentes: CSS plano con variables, para no
-  pelear contra un sistema de diseño ajeno al que ya aprobamos.
+```bash
+npm test
+npm run build
+```
 
-## Lo que falta (fuera de alcance de esta entrega)
+`npm test` utiliza el ejecutor de Node y prueba el cliente HTTP sin depender de un servidor ni de credenciales.
 
-- Autenticación real (depende de que el backend exponga JWT).
-- Conversaciones, Configuración, Mi cuenta — hoy son placeholders.
-- Confirmación de acciones sensibles (Biblia, sección 12) — se añade
-  cuando exista el flujo de Tool Calling en el backend.
-- Docker — lo integra el equipo de DevOps una vez que `package.json` y
-  esta estructura estén validados.
+## Rutas
+
+| Ruta | Pantalla | Estado |
+|---|---|---|
+| `/login` | Inicio de sesión | Conectada a API |
+| `/registro` | Registro | Conectada a API |
+| `/dashboard` | Resumen | Presentación real de estado |
+| `/conversaciones` | Conversaciones | Redacción local; IA pendiente |
+| `/actividad` | Actividad | UI lista; API pendiente |
+| `/integraciones` | Integraciones | UI lista; OAuth pendiente |
+| `/configuracion` | Configuración | Tema y healthcheck funcionales |
+| `/cuenta` | Mi cuenta | Perfil real conectado |
+
+## Seguridad
+
+- No ingreses claves privadas ni tokens OAuth en el frontend.
+- El login usa `sessionStorage` para JWT en esta versión. Debe mantenerse una **revisión de XSS/CSP y almacenamiento de sesión** antes de desplegar a internet.
+- Confirmaciones de acciones sensibles deben validarse en backend, nunca solo en la interfaz.
+- La protección del frontend no sustituye autorización y permisos por objeto en DRF.
+
+Ver `docs/revisiones/revision-2026-11-10.md` para hallazgos y siguientes pasos.

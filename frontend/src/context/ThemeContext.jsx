@@ -6,10 +6,13 @@ const ThemeContext = createContext(null);
 
 function getInitialTheme() {
   if (typeof window === 'undefined') return 'light';
-  const stored = window.localStorage.getItem(STORAGE_KEY);
-  if (stored === 'light' || stored === 'dark') return stored;
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  return prefersDark ? 'dark' : 'light';
+  try {
+    const stored = window.localStorage.getItem(STORAGE_KEY);
+    if (stored === 'light' || stored === 'dark') return stored;
+    return window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ? 'dark' : 'light';
+  } catch {
+    return 'light';
+  }
 }
 
 export function ThemeProvider({ children }) {
@@ -17,7 +20,7 @@ export function ThemeProvider({ children }) {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-    window.localStorage.setItem(STORAGE_KEY, theme);
+    try { window.localStorage.setItem(STORAGE_KEY, theme); } catch { /* almacenamiento no disponible */ }
   }, [theme]);
 
   const value = useMemo(

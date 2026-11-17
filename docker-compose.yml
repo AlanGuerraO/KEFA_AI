@@ -119,7 +119,7 @@ services:
       # → 7535-8034 excluido). 8080 está fuera de ese rango y del otro
       # rango excluido (50000-50059). El contenedor sigue usando 8000
       # internamente, backend/manage.py runserver no cambia.
-      - "8080:8000"
+      - "${BACKEND_HOST_PORT:-8080}:8000"
     volumes:
       - ./backend:/app
     depends_on:

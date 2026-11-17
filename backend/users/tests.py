@@ -72,6 +72,37 @@ class AuthenticationTests(APITestCase):
                 self.assertEqual(response.status_code, 400)
         self.assertEqual(User.objects.count(), initial_count)
 
+    def test_registration_rejects_duplicate_email_case_insensitive(self):
+        response = self.client.post(
+            reverse("user-register"),
+            self.registration_data(email="PRUEBA@EXAMPLE.COM"),
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("email", response.data)
+
+    def test_email_login_rejects_ambiguous_legacy_records(self):
+        User.objects.create_user(
+            username="otro_usuario",
+            email="PRUEBA@example.com",
+            password=self.password,
+        )
+        response = self.client.post(
+            reverse("user-login"),
+            {"email": "prueba@example.com", "password": self.password},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 401)
+
+    def test_login_accepts_unique_email(self):
+        response = self.client.post(
+            reverse("user-login"),
+            {"email": "PRUEBA@EXAMPLE.COM", "password": self.password},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("access", response.data)
+
     def test_login_returns_access_and_refresh(self):
         response = self.client.post(
             reverse("user-login"),

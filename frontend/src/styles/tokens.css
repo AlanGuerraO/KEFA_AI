@@ -1,58 +1,43 @@
-/*
-  Tokens de diseño de KEFA AI.
-
-  Claro: el look original aprobado (acento índigo, Space Grotesk + IBM Plex Sans).
-  Oscuro: paleta de identidad de marca (tinta/azul profundo/azul cielo).
-
-  Por defecto sigue la preferencia del sistema; el usuario puede forzarlo con
-  data-theme="light" | "dark" en <html> (ver ThemeContext.jsx).
-*/
-
 :root {
-  --bg: #f7f7f4;
-  --surface: #ffffff;
-  --line: #e6e5e0;
-  --ink: #15171c;
-  --muted: #6d6f75;
-  --faint: #9a9ba0;
-  --accent: #304ffe;
-  --accent-soft: #edefff;
-  --chip: #f0f0ed;
-
-  --danger: #d9534f;
-  --success: #2e9e5b;
-
-  --font-display: 'Space Grotesk', system-ui, sans-serif;
-  --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
-
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-pill: 999px;
+  color-scheme: light;
+  --bg: #f6f8fc;
+  --surface: #fff;
+  --surface-soft: #f8faff;
+  --ink: #19253d;
+  --muted: #6d7990;
+  --faint: #8f9cb0;
+  --line: #e7ebf3;
+  --accent: #6757f5;
+  --accent-deep: #5145da;
+  --accent-soft: #f0eeff;
+  --chip: #f2f5fb;
+  --success: #16a079;
+  --danger: #d34d65;
+  --shadow: 0 4px 20px rgba(22, 35, 68, .035);
+  --sidebar-bg: #111b32;
+  --sidebar-text: #e5ebf8;
+  --font-display: 'Plus Jakarta Sans', 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Inter', 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
 }
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    --bg: #1b262c;
-    --surface: #24333b;
-    --line: #34454f;
-    --ink: #eaf5fc;
-    --muted: #bbe1fa;
-    --faint: #9fb8c2;
-    --accent: #3282b8;
-    --accent-soft: rgba(50, 130, 184, 0.28);
-    --chip: #2c3c45;
-  }
-}
-
 :root[data-theme='dark'] {
-  --bg: #1b262c;
-  --surface: #24333b;
-  --line: #34454f;
-  --ink: #eaf5fc;
-  --muted: #bbe1fa;
-  --faint: #9fb8c2;
-  --accent: #3282b8;
-  --accent-soft: rgba(50, 130, 184, 0.28);
-  --chip: #2c3c45;
+  color-scheme: dark;
+  --bg: #101727;
+  --surface: #172137;
+  --surface-soft: #1c2942;
+  --ink: #edf2fc;
+  --muted: #aab6ce;
+  --faint: #8493b3;
+  --line: #2b3953;
+  --accent: #988eff;
+  --accent-deep: #7770fb;
+  --accent-soft: #30294e;
+  --chip: #222e49;
+  --success: #48d7ad;
+  --danger: #ff8799;
+  --shadow: 0 8px 24px rgba(0,0,0,.07);
+  --sidebar-bg: #0c1425;
+  --sidebar-text: #eef1fd;
 }

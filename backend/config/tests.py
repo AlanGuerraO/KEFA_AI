@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.test import SimpleTestCase
 from django.urls import reverse
 from rest_framework.test import APIClient
@@ -17,3 +18,12 @@ class HealthEndpointTests(SimpleTestCase):
         response = self.client.post(reverse("health"), {}, format="json")
 
         self.assertEqual(response.status_code, 405)
+
+
+class AppConfigurationTests(SimpleTestCase):
+    def test_cors_is_registered_once(self):
+        self.assertEqual(settings.INSTALLED_APPS.count("corsheaders"), 1)
+        self.assertEqual(
+            settings.MIDDLEWARE.count("corsheaders.middleware.CorsMiddleware"),
+            1,
+        )

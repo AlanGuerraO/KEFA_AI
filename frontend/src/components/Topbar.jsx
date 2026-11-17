@@ -1,38 +1,15 @@
+import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import StatusDot from './StatusDot';
 import ThemeToggle from './ThemeToggle';
-
-const WEEKDAY_FORMAT = new Intl.DateTimeFormat('es-MX', {
-  weekday: 'long',
-  day: 'numeric',
-  month: 'long',
-});
-
-export default function Topbar({ userName = 'Estefanía' }) {
-  const today = WEEKDAY_FORMAT.format(new Date());
-  const todayCapitalized = today.charAt(0).toUpperCase() + today.slice(1);
-  const initial = userName.charAt(0).toUpperCase();
-
-  return (
-    <div className="topbar">
-      <div>
-        <h1>Hola, {userName}</h1>
-        <p className="subtitle">{todayCapitalized}</p>
-      </div>
-
-      <div className="topbar-actions">
-        <StatusDot />
-        <ThemeToggle />
-        <button type="button" className="iconbtn" aria-label="Notificaciones">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
-            <path d="M18 16c-1.6-1.4-2-3.3-2-6a4 4 0 0 0-8 0c0 2.7-.4 4.6-2 6h12Z" />
-            <path d="M10 19a2 2 0 0 0 4 0" />
-          </svg>
-        </button>
-        <div className="user-pill">
-          <span className="avatar">{initial}</span>
-          <span>{userName}</span>
-        </div>
-      </div>
-    </div>
-  );
+import Icon from './Icon';
+const TITLES = {'/dashboard':'Resumen','/conversaciones':'Conversaciones','/actividad':'Actividad','/integraciones':'Integraciones','/configuracion':'Configuración','/cuenta':'Mi cuenta'};
+const dateFormat = new Intl.DateTimeFormat('es-MX', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+export default function Topbar({ openMenu }) {
+  const { user } = useAuth();
+  const { pathname } = useLocation();
+  return <header className="topbar">
+    <div className="topbar-start"><button className="menu-toggle iconbtn" onClick={openMenu} type="button" aria-label="Abrir menú"><Icon name="menu"/></button><div className="breadcrumb"><span>Espacio personal</span><Icon name="chevron" size={15}/><strong>{TITLES[pathname] || 'KEFA AI'}</strong></div></div>
+    <div className="topbar-actions"><span className="topbar-date">{dateFormat.format(new Date())}</span><StatusDot/><ThemeToggle/><Link to="/cuenta" className="topbar-avatar" aria-label={`Ir a la cuenta de ${user?.username || 'usuario'}`}>{(user?.username || 'U').slice(0,1).toUpperCase()}</Link></div>
+  </header>;
 }

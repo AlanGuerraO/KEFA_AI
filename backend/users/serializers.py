@@ -21,6 +21,13 @@ class RegisterSerializer(serializers.ModelSerializer):
             "email": {"required": True, "allow_blank": False},
         }
 
+    def validate_email(self, value):
+        """Correo único para evitar ambigüedad al iniciar sesión por email."""
+        email = value.strip().lower()
+        if User.objects.filter(email__iexact=email).exists():
+            raise serializers.ValidationError("Este correo ya está registrado.")
+        return email
+
     def validate(self, attrs):
         user = User(
             username=attrs["username"],
@@ -50,12 +57,11 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
         email = attrs.pop("email", None)
 
         if email:
-            user = User.objects.filter(email__iexact=email.strip()).first()
-
-            # Si el correo no existe, se deja un usuario imposible
-            # para que SimpleJWT rechace las credenciales con HTTP 401.
+            # La tabla heredada no garantiza unicidad por email. Un correo
+            # ambiguo nunca debe iniciar sesión en el primer usuario hallado.
+            users = list(User.objects.filter(email__iexact=email.strip())[:2])
             attrs[User.USERNAME_FIELD] = (
-                user.get_username() if user else ""
+                users[0].get_username() if len(users) == 1 else ""
             )
 
         if not attrs.get(User.USERNAME_FIELD):

@@ -167,3 +167,11 @@ El proyecto seguirá un enfoque incremental, priorizando primero un **MVP funcio
 ## 🎓 Propósito académico
 
 KEFA AI busca demostrar la aplicación práctica de conceptos de **Inteligencia Artificial, desarrollo web, APIs, automatización, bases de datos, seguridad e integración de sistemas** en una solución funcional desarrollada mediante trabajo colaborativo.
+
+## Revisión del frontend — noviembre de 2026
+
+El frontend cuenta con páginas para Resumen, Conversaciones, Actividad, Integraciones, Configuración y Mi cuenta. El registro/login JWT y el perfil consumen endpoints Django; los demás flujos de IA e integraciones **no se ejecutan todavía**. La descripción de la arquitectura y el MVP anterior expresa la **meta** del proyecto, no una garantía de implementación completa.
+
+Para ver cambios concretos, errores detectados, pruebas y el plan de integración, consultar [`docs/revisiones/revision-2026-11-10.md`](docs/revisiones/revision-2026-11-10.md).
+
+**Atención:** no distribuyas archivos `.env`, claves, `secrets/postgres_password.txt`, carpetas `.git` ni dependencias instaladas. La entrega revisada excluye estos archivos privados. Instala dependencias con `npm ci` en tu equipo o dentro de Docker.
