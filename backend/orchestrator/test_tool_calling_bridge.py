@@ -9,18 +9,27 @@ from orchestrator.confirmation_store import confirmation_store
 
 class TestToolCallingBridge(unittest.TestCase):
 
-    
-    def test_herramienta_preparada(self):
+    def test_herramienta_preparada_se_envia_a_n8n(self):
         servicio = Mock()
         servicio.procesar.return_value = [{
             "type": "tool_call",
             "payload": {
-                "tool": "tasks.create_task",
+                "tool": "tasks.create",
                 "parameters": {"title": "Tarea de prueba"},
+                "execution": {"method": "n8n", "status": "cataloged"},
             },
         }]
 
-        puente = ToolCallingBridge(tool_service=servicio)
+        ejecutor = Mock(return_value={
+            "status": "accepted",
+            "http_status": 200,
+            "response": '{"message":"Workflow was started"}',
+        })
+
+        puente = ToolCallingBridge(
+            tool_service=servicio,
+            n8n_executor=ejecutor,
+        )
 
         resultado = puente.procesar("Crea una tarea")
 
@@ -29,9 +38,37 @@ class TestToolCallingBridge(unittest.TestCase):
             resultado[0]["decision"].decision,
             DecisionType.EXECUTE,
         )
-        self.assertEqual(resultado[0]["status"], "prepared")
+        self.assertEqual(resultado[0]["status"], "accepted")
+        self.assertEqual(
+            resultado[0]["execution_result"]["http_status"],
+            200,
+        )
+        ejecutor.assert_called_once_with(
+            servicio.procesar.return_value[0]["payload"]
+        )
 
-    def test_confirmacion(self):
+    def test_error_de_n8n_se_propaga(self):
+        servicio = Mock()
+        servicio.procesar.return_value = [{
+            "type": "tool_call",
+            "payload": {
+                "tool": "tasks.create",
+                "parameters": {"title": "Tarea de prueba"},
+                "execution": {"method": "n8n", "status": "cataloged"},
+            },
+        }]
+
+        ejecutor = Mock(side_effect=RuntimeError("Error de conexión"))
+
+        puente = ToolCallingBridge(
+            tool_service=servicio,
+            n8n_executor=ejecutor,
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "Error de conexión"):
+            puente.procesar("Crea una tarea")
+
+    def test_confirmacion_no_ejecuta_n8n(self):
         servicio = Mock()
         servicio.procesar.return_value = [{
             "type": "error",
@@ -41,7 +78,11 @@ class TestToolCallingBridge(unittest.TestCase):
             "message": "Requiere confirmacion.",
         }]
 
-        puente = ToolCallingBridge(tool_service=servicio)
+        ejecutor = Mock()
+        puente = ToolCallingBridge(
+            tool_service=servicio,
+            n8n_executor=ejecutor,
+        )
 
         resultado = puente.procesar(
             "Elimina mi evento",
@@ -53,6 +94,7 @@ class TestToolCallingBridge(unittest.TestCase):
             resultado[0]["decision"].decision,
             DecisionType.REQUEST_CONFIRMATION,
         )
+        ejecutor.assert_not_called()
 
         request_id = resultado[0]["request_id"]
         self.assertIsInstance(request_id, str)
@@ -69,7 +111,7 @@ class TestToolCallingBridge(unittest.TestCase):
             {"event_id": "evento_123"},
         )
 
-    def test_rechazo(self):
+    def test_rechazo_no_ejecuta_n8n(self):
         servicio = Mock()
         servicio.procesar.return_value = [{
             "type": "error",
@@ -78,7 +120,11 @@ class TestToolCallingBridge(unittest.TestCase):
             "message": "Herramienta desconocida.",
         }]
 
-        puente = ToolCallingBridge(tool_service=servicio)
+        ejecutor = Mock()
+        puente = ToolCallingBridge(
+            tool_service=servicio,
+            n8n_executor=ejecutor,
+        )
 
         resultado = puente.procesar("Ejecuta herramienta falsa")
 
@@ -87,4 +133,8 @@ class TestToolCallingBridge(unittest.TestCase):
             resultado[0]["decision"].decision,
             DecisionType.REJECT,
         )
+        ejecutor.assert_not_called()
 
+
+if __name__ == "__main__":
+    unittest.main()
