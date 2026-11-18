@@ -6,7 +6,8 @@
         "httpMethod": "POST",
         "path": "kefa-calendar-tasks",
         "authentication": "basicAuth",
-        "options": {}
+        "options": {},
+        "responseMode": "lastNode"
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
