@@ -1,3 +1,5 @@
+
+
 import base64
 import json
 import os
@@ -10,10 +12,24 @@ class N8NClientError(Exception):
     """Error al comunicarse con n8n."""
 
 
+def _parse_response_body(response_body):
+    """Convierte JSON cuando sea posible y conserva el texto original."""
+    if not response_body:
+        return None
+
+    try:
+        return json.loads(response_body)
+    except (json.JSONDecodeError, TypeError):
+        return response_body
+
+
 def execute_n8n_tool(prepared_call):
     """
     Envía a n8n una llamada previamente validada
     mediante prepare_tool_call().
+
+    Una respuesta HTTP exitosa significa que n8n recibió
+    la solicitud, no necesariamente que terminó la ejecución.
     """
 
     if not isinstance(prepared_call, dict):
@@ -64,10 +80,12 @@ def execute_n8n_tool(prepared_call):
     try:
         with urlopen(request, timeout=15) as response:
             response_body = response.read().decode("utf-8")
+            parsed_response = _parse_response_body(response_body)
+
             return {
                 "status": "accepted",
                 "http_status": response.status,
-                "response": response_body,
+                "response": parsed_response,
             }
 
     except HTTPError as error:

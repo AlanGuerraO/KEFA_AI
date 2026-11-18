@@ -63,4 +63,8 @@ def dispatch_prepared_call(prepared_call, *, granted_permissions=None):
     if not isinstance(response, dict) or response.get("status") != "accepted":
         raise DispatchRejectedError("n8n no confirmó la recepción de la solicitud.")
 
-    return {"status": "accepted", "http_status": response.get("http_status")}
+    return {
+     "status": "accepted",
+     "http_status": response.get("http_status"),
+     "response": response.get("response"),
+    }
