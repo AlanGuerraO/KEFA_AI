@@ -1,9 +1,8 @@
 
-import json
-
 from prompts.initial_prompts import (
     get_system_prompt,
     get_intention_prompt,
+    validate_response,
 )
 from services.claude_service import ClaudeService
 
@@ -26,12 +25,14 @@ class InstructionProcessor:
 Devuelve únicamente un objeto JSON válido con esta estructura:
 
 {
-    "intencion": "intención identificada",
-    "herramienta": null,
+    "intencion": "crear_tarea",
+    "herramienta": "tasks.create",
     "parametros": {},
-    "informacion_faltante": [],
+    "informacion_faltante": ["title"],
     "requiere_confirmacion": false,
-    "estado": "analizado"
+    "estado": "incompleto",
+    "mensaje": "¿Qué título tendrá la tarea?"
+
 }
 
 Reglas:
@@ -45,36 +46,9 @@ Reglas:
         )
 
         respuesta = self.claude_service.enviar_mensaje(prompt)
-
         try:
-            resultado = json.loads(respuesta)
-        except (json.JSONDecodeError, TypeError) as error:
+            return validate_response(respuesta)
+        except (ValueError, TypeError) as error:
             raise ValueError(
-                "Claude no devolvió un JSON válido"
+                f"Respuesta inválida de Claude: {error}"
             ) from error
-
-        if not isinstance(resultado, dict):
-            raise ValueError("La respuesta debe ser un objeto JSON")
-
-        campos = {
-            "intencion": str,
-            "parametros": dict,
-            "informacion_faltante": list,
-            "requiere_confirmacion": bool,
-            "estado": str,
-        }
-
-        for campo, tipo in campos.items():
-            if campo not in resultado or not isinstance(
-                resultado[campo], tipo
-            ):
-                raise ValueError(
-                    f"Campo inválido o faltante: {campo}"
-                )
-
-        if not isinstance(
-            resultado.get("herramienta"), (str, type(None))
-        ):
-            raise ValueError("Campo inválido: herramienta")
-
-        return resultado

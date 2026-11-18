@@ -32,18 +32,30 @@ class TestInitialPrompts(unittest.TestCase):
         with self.assertRaises(ValueError):
             get_intention_prompt("")
 
+
     def test_json_response(self):
         response = json.dumps({
             "intencion": "crear_tarea",
-            "herramienta": None,
-            "parametros": {"fecha": "mañana"},
-            "estado": "completo",
-            "mensaje": ""
+            "herramienta": "tasks.create",
+            "parametros": {
+                "title": "Comprar materiales"
+            },
+            "informacion_faltante": [],
+            "requiere_confirmacion": False,
+            "estado": "analizado",
+            "mensaje": "Tarea preparada"
         })
 
         result = validate_response(response)
 
-        self.assertEqual(result["estado"], "completo")
+        self.assertEqual(result["intencion"], "crear_tarea")
+        self.assertEqual(result["herramienta"], "tasks.create")
+        self.assertEqual(result["estado"], "analizado")
+        self.assertEqual(
+            result["parametros"]["title"],
+            "Comprar materiales"
+        )
+
 
 
 if __name__ == "__main__":
