@@ -9,13 +9,18 @@ from tool_catalog.catalog import list_tools
 from tool_catalog.registry import prepare_tool_call
 from tool_catalog.errors import ToolCatalogError
 
-
-def build_claude_tools():
+def build_claude_tools(granted_permissions=None):
     """Convierte el catálogo autorizado al formato de Anthropic."""
     definitions = []
     name_map = {}
 
+    granted = set(granted_permissions or [])
+
     for tool in list_tools():
+        required = set(tool.get("permissions", []))
+
+        if not required.issubset(granted):
+            continue
         # Evitamos caracteres especiales en los nombres de la API.
         api_name = tool["name"].replace(".", "__")
 
@@ -60,8 +65,9 @@ class ToolCallingService:
         if not isinstance(mensaje, str) or not mensaje.strip():
             raise ValueError("El mensaje no puede estar vacío.")
 
-        definitions, name_map = build_claude_tools()
-
+        definitions, name_map = build_claude_tools(
+          granted_permissions=granted_permissions
+        )
         if self.client is None:
             self.client = get_claude_client()
         try:
