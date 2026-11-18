@@ -1,8 +1,8 @@
 
+
 import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock
-
 
 from services.tool_calling_service import (
     ToolCallingService,
@@ -26,9 +26,14 @@ class TestToolCallingService(unittest.TestCase):
         return client
 
     def test_schema(self):
-        tools, name_map = build_claude_tools()
+        tools, name_map = build_claude_tools(
+            granted_permissions=["tasks:write"]
+        )
         self.assertTrue(tools)
         self.assertIn("tasks__create", name_map)
+        self.assertIn("tasks__complete", name_map)
+        self.assertNotIn("calendar__create_event", name_map)
+        self.assertNotIn("notion__search", name_map)
 
     def test_herramienta_valida(self):
         client = self.fake_client(
@@ -72,20 +77,25 @@ class TestToolCallingService(unittest.TestCase):
             "Crea una tarea",
             granted_permissions=[],
         )
-        self.assertEqual(
-            result[0]["code"], "PermissionDeniedError"
-        )
+
+        self.assertEqual(result[0]["type"], "error")
+        self.assertEqual(result[0]["code"], "unknown_tool")
+
+        tools_sent = client.messages.create.call_args.kwargs["tools"]
+        tool_names = [tool["name"] for tool in tools_sent]
+
+        self.assertNotIn("tasks__create", tool_names)
 
     def test_mensaje_vacio(self):
         service = ToolCallingService(client=Mock())
         with self.assertRaises(ValueError):
             service.procesar("")
+
     def test_confirmacion_requerida(self):
         client = self.fake_client(
             "calendar__delete_event",
             {"event_id": "evento_123"},
         )
-
         service = ToolCallingService(client=client)
 
         result = service.procesar(
@@ -99,6 +109,7 @@ class TestToolCallingService(unittest.TestCase):
             result[0]["code"],
             "ConfirmationRequiredError"
         )
+
     def test_multiples_herramientas(self):
         client = Mock()
 
@@ -116,6 +127,22 @@ class TestToolCallingService(unittest.TestCase):
                 input={"title": "Estudiar matemáticas"},
             ),
         ]
+
+        client.messages.create.return_value = (
+            SimpleNamespace(content=bloques)
+        )
+
+        service = ToolCallingService(client=client)
+        result = service.procesar(
+            "Crea dos tareas",
+            granted_permissions=["tasks:write"],
+        )
+
+        self.assertEqual(len(result), 2)
+        self.assertTrue(
+            all(item["type"] == "tool_call" for item in result)
+        )
+
     def test_error_claude(self):
         client = Mock()
         client.messages.create.side_effect = ConnectionError(
@@ -131,6 +158,7 @@ class TestToolCallingService(unittest.TestCase):
 
         self.assertEqual(result[0]["type"], "error")
         self.assertEqual(result[0]["code"], "claude_api_error")
+
 
 if __name__ == "__main__":
     unittest.main()
