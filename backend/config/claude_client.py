@@ -1,7 +1,6 @@
 
 import os
 
-from anthropic import Anthropic
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -15,6 +14,7 @@ def get_claude_client():
             "Configúrala en el archivo .env."
         )
 
+    from anthropic import Anthropic
     return Anthropic(api_key=api_key)
 
 

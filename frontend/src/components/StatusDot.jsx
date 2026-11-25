@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getHealth } from '../services/api';
-const labels = {checking:'Comprobando conexión',ok:'API disponible',down:'API sin conexión'};
+const labels = {checking:'Comprobando servicio',ok:'Servicio disponible',down:'Servicio sin conexión'};
 export default function StatusDot() {
   const [status,setStatus] = useState('checking');
   useEffect(() => { let mounted=true; getHealth().then(data => {if(mounted) setStatus(data?.status==='ok'?'ok':'down')}).catch(()=>{if(mounted)setStatus('down')}); return ()=>{mounted=false};},[]);

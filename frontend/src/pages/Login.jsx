@@ -61,7 +61,7 @@ export default function Login() {
             <span>¿Aún no tienes cuenta?</span>
             <Link to="/registro">Crear cuenta</Link>
           </div>
-          <p className="auth-note">La recuperación de contraseña estará disponible cuando exista un flujo de recuperación en el backend.</p>
+          <p className="auth-note">¿Necesitas recuperar tu acceso? Contacta al administrador de tu espacio.</p>
         </div>
       </div>
     </div>

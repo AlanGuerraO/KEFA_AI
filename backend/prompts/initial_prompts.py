@@ -4,7 +4,7 @@ import json
 # Prompt principal del sistema
 
 SYSTEM_PROMPT = """
-Eres KEFA IA, un asistente inteligente que utiliza Claude.
+Eres KEFA IA, un asistente inteligente que utiliza el proveedor de IA configurado.
 
 Tu responsabilidad es interpretar las instrucciones
 del usuario y preparar acciones para el sistema.

@@ -69,13 +69,20 @@ export function getCurrentUser(token) {
   });
 }
 
-/** API de orquestación actual: POST /api/ai/tool-calling/ */
-export function sendInstruction(token, message, signal) {
+/**
+ * El backend v4 admite analizar (ejecutar=false) y despachar (ejecutar=true).
+ * Ejecutar envía una orden con posibles efectos externos: no repetir automáticamente.
+ */
+export function sendInstruction(token, message, { execute = false, signal } = {}) {
   if (!token) throw new Error('Inicia sesión para enviar instrucciones.');
+  if (typeof message !== 'string' || !message.trim() || message.trim().length > 2000) {
+    throw new Error('Escribe una instrucción válida de máximo 2000 caracteres.');
+  }
+  if (typeof execute !== 'boolean') throw new Error('El modo de ejecución debe ser booleano.');
   return request('/api/ai/tool-calling/', {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ mensaje: message }),
+    body: JSON.stringify({ mensaje: message.trim(), ejecutar: execute }),
     signal,
   });
 }
@@ -92,4 +99,9 @@ export function respondToConfirmation(token, requestId, answer, signal) {
     body: JSON.stringify({ request_id: requestId, respuesta: answer }),
     signal,
   });
+}
+
+/** Modo de conversación único: Gemini responde en texto o propone una acción. */
+export function sendAutomaticInstruction(token, message, options = {}) {
+  return sendInstruction(token, message, { ...options, execute: true });
 }

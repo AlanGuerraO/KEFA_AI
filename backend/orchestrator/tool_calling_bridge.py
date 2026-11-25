@@ -39,6 +39,15 @@ class ToolCallingBridge:
         for resultado in resultados:
 
             if resultado["type"] == "text":
+                # Antes se descartaban respuestas como saludos o aclaraciones.
+                decisiones.append({
+                    "decision": OrchestratorDecision(
+                        decision=DecisionType.RESPOND,
+                        reason=resultado.get("text", ""),
+                    ),
+                    "status": "response",
+                    "message": resultado.get("text", ""),
+                })
                 continue
 
             if resultado["type"] == "tool_call":

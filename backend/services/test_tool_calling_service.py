@@ -35,7 +35,7 @@ class TestToolCallingService(unittest.TestCase):
             "tasks__create",
             {"title": "Entregar proyecto"},
         )
-        service = ToolCallingService(client=client)
+        service = ToolCallingService(client=client, provider="anthropic")
 
         result = service.procesar(
             "Crea una tarea para entregar el proyecto",
@@ -46,14 +46,14 @@ class TestToolCallingService(unittest.TestCase):
 
     def test_herramienta_desconocida(self):
         client = self.fake_client("herramienta_falsa", {})
-        service = ToolCallingService(client=client)
+        service = ToolCallingService(client=client, provider="anthropic")
 
         result = service.procesar("Ejecuta herramienta falsa")
         self.assertEqual(result[0]["code"], "unknown_tool")
 
     def test_parametros_incompletos(self):
         client = self.fake_client("tasks__create", {})
-        service = ToolCallingService(client=client)
+        service = ToolCallingService(client=client, provider="anthropic")
 
         result = service.procesar(
             "Crea una tarea",
@@ -66,7 +66,7 @@ class TestToolCallingService(unittest.TestCase):
             "tasks__create",
             {"title": "Entregar proyecto"},
         )
-        service = ToolCallingService(client=client)
+        service = ToolCallingService(client=client, provider="anthropic")
 
         result = service.procesar(
             "Crea una tarea",
@@ -80,25 +80,16 @@ class TestToolCallingService(unittest.TestCase):
         service = ToolCallingService(client=Mock())
         with self.assertRaises(ValueError):
             service.procesar("")
-    def test_confirmacion_requerida(self):
-        client = self.fake_client(
-            "calendar__delete_event",
-            {"event_id": "evento_123"},
-        )
-
-        service = ToolCallingService(client=client)
-
+    def test_no_expone_borrado_sin_workflow_disponible(self):
+        # La edición MVP solo publica tools disponibles en n8n.
+        client = self.fake_client("calendar__delete_event", {"event_id": "evento_123"})
+        service = ToolCallingService(client=client, provider="anthropic")
         result = service.procesar(
             "Elimina el evento del calendario",
             granted_permissions=["calendar:write"],
-            confirmed=False,
         )
+        self.assertEqual(result[0]["code"], "unknown_tool")
 
-        self.assertEqual(result[0]["type"], "error")
-        self.assertEqual(
-            result[0]["code"],
-            "ConfirmationRequiredError"
-        )
     def test_multiples_herramientas(self):
         client = Mock()
 
@@ -122,7 +113,7 @@ class TestToolCallingService(unittest.TestCase):
             "No se pudo conectar con Claude"
         )
 
-        service = ToolCallingService(client=client)
+        service = ToolCallingService(client=client, provider="anthropic")
 
         result = service.procesar(
             "Crea una tarea",

@@ -1,4 +1,6 @@
 
+import os
+
 from config.claude_client import get_claude_client
 
 
@@ -15,7 +17,7 @@ class ClaudeService:
             self.client = get_claude_client()
 
         respuesta = self.client.messages.create(
-            model="claude-sonnet-4-5",
+            model=os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-5"),
             max_tokens=1024,
             messages=[
                 {

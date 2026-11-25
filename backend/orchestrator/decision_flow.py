@@ -11,6 +11,7 @@ class DecisionType(str, Enum):
     EXECUTE = "execute"
     REQUEST_CONFIRMATION = "request_confirmation"
     REJECT = "reject"
+    RESPOND = "respond"
 
 
 @dataclass

@@ -92,3 +92,18 @@ La configuración PostgreSQL, JWT y el modelo de usuario están presentes en
 el código. El sistema completo todavía necesita historial, orquestación,
 workflows de n8n, autorización OAuth y pruebas de integración. Ver la
 revisión en `docs/revisiones/revision-2026-11-10.md`.
+
+## Gemini API (proveedor por defecto)
+
+El servicio principal `services/tool_calling_service.py` ahora utiliza Gemini por medio de `config/gemini_client.py` cuando `LLM_PROVIDER=gemini`. El analizador alternativo `InstructionProcessor` también utiliza `GeminiService` por defecto. El endpoint web sigue siendo `POST /api/ai/tool-calling/` con los campos `mensaje` y `ejecutar`; no es necesario modificar el frontend para la API de Google.
+
+En el `.env` del servidor configura `GEMINI_API_KEY`, `GEMINI_MODEL` y `LLM_PROVIDER=gemini`. La documentación completa está en `docs/ai/CONFIGURAR_GEMINI_WINDOWS.md`. 
+
+Para diagnosticar sin imprimir claves:
+
+```bash
+python scripts/verificar_gemini.py
+python scripts/verificar_gemini.py --live
+```
+
+Este cliente usa la API REST oficial; no requiere `google-generativeai` ni `google-genai`. Las 2 herramientas ofrecidas a Gemini para el MVP son `tasks.create` y `calendar.create_event`. El backend sigue autorizando, validando y enviando esas llamadas a n8n: nunca se ejecutan directamente por decisión de Gemini.
