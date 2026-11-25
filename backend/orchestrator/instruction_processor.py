@@ -4,13 +4,20 @@ from prompts.initial_prompts import (
     get_intention_prompt,
     validate_response,
 )
+import os
+
 from services.claude_service import ClaudeService
+from services.gemini_service import GeminiService
 
 
 class InstructionProcessor:
 
     def __init__(self, claude_service=None):
-        self.claude_service = claude_service or ClaudeService()
+        # Se mantiene el argumento claude_service para compatibilidad con pruebas.
+        self.claude_service = claude_service or (
+            GeminiService() if os.getenv("LLM_PROVIDER", "gemini").lower() == "gemini"
+            else ClaudeService()
+        )
 
     def procesar_instruccion(self, instruccion):
         if not isinstance(instruccion, str) or not instruccion.strip():
@@ -50,5 +57,5 @@ Reglas:
             return validate_response(respuesta)
         except (ValueError, TypeError) as error:
             raise ValueError(
-                f"Respuesta inválida de Claude: {error}"
+                f"Respuesta inválida de la IA: {error}"
             ) from error

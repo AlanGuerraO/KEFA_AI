@@ -1,3 +1,5 @@
+> **Novedad: Modo automático y dictado por micrófono (noviembre 2026).** Consulte [GUIA_MODO_AUTOMATICO_VOZ.md](GUIA_MODO_AUTOMATICO_VOZ.md) para instalación, flujo y pruebas.
+
 # KEFA AI
 
 > **Entrega del frontend (17/11/2026):** la página Conversaciones ya consume la API de IA y gestiona confirmaciones y actividad de sesión. La ejecución real en n8n requiere trabajo de backend. Revisa [LEEME_FRONTEND_COMPLETO.md](LEEME_FRONTEND_COMPLETO.md) y [frontend/README.md](frontend/README.md).
@@ -178,3 +180,18 @@ El frontend cuenta con páginas para Resumen, Conversaciones, Actividad, Integra
 Para ver cambios concretos, errores detectados, pruebas y el plan de integración, consultar [`docs/revisiones/revision-2026-11-10.md`](docs/revisiones/revision-2026-11-10.md).
 
 **Atención:** no distribuyas archivos `.env`, claves, `secrets/postgres_password.txt`, carpetas `.git` ni dependencias instaladas. La entrega revisada excluye estos archivos privados. Instala dependencias con `npm ci` en tu equipo o dentro de Docker.
+
+
+## Frontend corregido para el orquestador v4
+
+Se agregó a Conversaciones un selector **Analizar / Ejecutar en n8n** (envía `ejecutar: false/true`). La ejecución solicita consentimiento explícito y diferencia respuestas preparadas, aceptadas, inciertas y resultados con identificador externo. Las confirmaciones positivas siguen deshabilitadas hasta completar Django (HTTP 501). Para detalles y pruebas, consulta `docs/revisiones/frontend-v4-corregido.md` y `frontend/README.md`.
+
+## Gemini (actualización de proveedor de IA)
+
+**Gemini es el proveedor predeterminado** para esta entrega. El backend llama por HTTPS a la API REST oficial `generateContent` desde `config/gemini_client.py`; React nunca recibe la clave. Se conserva Anthropic como alternativa opcional cambiando `LLM_PROVIDER=anthropic` y configurando su propia clave.
+
+Guía completa (crear cuenta/clave en Google AI Studio, configurar `.env`, Docker y probar):
+
+**[Configurar Gemini en Windows](docs/ai/CONFIGURAR_GEMINI_WINDOWS.md)**
+
+La primera prueba debe ser **Solo analizar**. Para `Ejecutar en n8n` se requieren además permisos Django, webhook y credenciales de Google Tasks. Las confirmaciones positivas, la auditoría persistente, la idempotencia y la verificación del ID externo continúan pendientes del backend/n8n: migrar a Gemini no equivale a haber terminado esas integraciones.

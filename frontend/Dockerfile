@@ -9,7 +9,7 @@ WORKDIR /app
 # Instalar dependencias primero (cachea esta capa mientras no cambie
 # package*.json, evitando reinstalar en cada build)
 COPY package*.json ./
-RUN npm install
+RUN npm ci --no-audit --no-fund
 
 # Código de la app (.dockerignore excluye node_modules, dist y .env reales)
 COPY . .

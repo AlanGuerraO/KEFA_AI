@@ -17,6 +17,8 @@ const paths = {
   bolt: <><path d="m13 2-9 12h7l-1 8 10-12h-7l0-8Z"/></>,
   plus: <><path d="M12 5v14M5 12h14"/></>,
   clipboard: <><rect x="5" y="4" width="14" height="18" rx="2"/><path d="M9 4.5V3h6v1.5M9 10h6m-6 4h6"/></>,
+  mic: <><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5m-4 0h8"/></>,
+  micOff: <><path d="m3 3 18 18M9.5 5.5V5a2.5 2.5 0 0 1 5 0v6a2.4 2.4 0 0 1-.1.7M7 9v2a5 5 0 0 0 8.5 3.5M19 9v2a7 7 0 0 1-1.5 4.3M12 18v4m-4 0h8"/></>,
   copy: <><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></>,
   info: <><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v.01"/></>,
   alert: <><path d="M12 3 2 21h20L12 3Zm0 6v5m0 4v.01"/></>,

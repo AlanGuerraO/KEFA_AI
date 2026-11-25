@@ -1,4 +1,6 @@
 
+import logging
+
 from rest_framework import status
 from rest_framework.decorators import (
     api_view,
@@ -7,6 +9,7 @@ from rest_framework.decorators import (
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from config.gemini_client import GeminiAPIError
 from orchestrator.tool_calling_bridge import ToolCallingBridge
 from orchestrator.decision_flow import DecisionType
 from orchestrator.n8n_dispatch import (
@@ -19,6 +22,9 @@ from tool_catalog.n8n_client import N8NClientError
 from orchestrator.confirmation_store import confirmation_store
 
 from orchestrator.user_permissions import get_kefa_permissions
+from orchestrator.automatic_intent import allows_automatic_creation
+
+logger = logging.getLogger(__name__)
 
 
 @api_view(["POST"])
@@ -38,12 +44,8 @@ def tool_calling(request):
             {"error": "ejecutar debe ser booleano."},
             status=status.HTTP_400_BAD_REQUEST,
         )
-    if ejecutar and not is_dispatch_enabled():
-        return Response(
-            {"error": "La ejecución en n8n está deshabilitada en el servidor."},
-            status=status.HTTP_503_SERVICE_UNAVAILABLE,
-        )
-
+    # No bloquear las preguntas si n8n está deshabilitado: pueden responderse
+    # sin efectos externos. La bandera se verifica antes de cualquier despacho.
     bridge = ToolCallingBridge()
     granted_permissions = get_kefa_permissions(request.user)
 
@@ -54,7 +56,22 @@ def tool_calling(request):
             confirmed=False,
             user_id=str(request.user.pk),
         )
+    except GeminiAPIError as exc:
+        logger.warning("Fallo en Gemini (HTTP %s): %s", exc.http_status, str(exc))
+        return Response(
+            {"error": str(exc)},
+            status=(status.HTTP_429_TOO_MANY_REQUESTS if exc.http_status == 429
+                    else status.HTTP_502_BAD_GATEWAY),
+        )
+    except ValueError as exc:
+        # Error conocido de configuración: mostrar solo diagnóstico inocuo.
+        if "GEMINI_API_KEY" in str(exc) or "ANTHROPIC_API_KEY" in str(exc):
+            logger.warning("Proveedor LLM sin clave configurada.")
+            return Response({"error": str(exc)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        logger.exception("Error de validación del orquestador para el usuario %s", request.user.pk)
+        return Response({"error": "No se pudo procesar la instrucción."}, status=status.HTTP_502_BAD_GATEWAY)
     except Exception:
+        logger.exception("Error al procesar Tool Calling para el usuario %s", request.user.pk)
         return Response(
             {"error": "No se pudo procesar la instrucción."},
             status=status.HTTP_502_BAD_GATEWAY,
@@ -71,13 +88,18 @@ def tool_calling(request):
             "reason": decision.reason,
             "status": item["status"],
             "request_id": item.get("request_id"),
+            "message": item.get("message"),
         })
 
     if not ejecutar:
         return Response({"resultados": resultados})
 
-    # Para evitar ejecuciones parciales, no enviar nada si Claude propuso
+    # Para evitar ejecuciones parciales, no enviar nada si la IA propuso
     # múltiples acciones, una confirmación o un error.
+    if len(decisiones) == 1 and decisiones[0]["decision"].decision == DecisionType.RESPOND:
+        # Una pregunta o aclaración no representa ninguna acción en n8n.
+        return Response({"resultados": resultados})
+
     if len(decisiones) != 1 or decisiones[0]["decision"].decision != DecisionType.EXECUTE:
         return Response(
             {"error": "Se requiere una única acción autorizada y sin confirmación pendiente.",
@@ -86,6 +108,25 @@ def tool_calling(request):
         )
 
     propuesta = decisiones[0]
+    if not allows_automatic_creation(mensaje, propuesta["decision"].tool_name):
+        return Response({"resultados": [{
+            "decision": "respond",
+            "tool": None,
+            "reason": "Se requiere una instrucción explícita.",
+            "status": "response",
+            "message": (
+                "Para evitar crear algo por equivocación, dime directamente "
+                "«crea una tarea…» o «agenda un evento…», con sus datos."
+            ),
+            "request_id": None,
+        }]})
+
+    if not is_dispatch_enabled():
+        return Response(
+            {"error": "La creación automática de tareas y eventos no está habilitada en el servidor."},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+
     if propuesta.get("status") != "prepared":
         return Response(
             {"error": "La herramienta no está preparada."},

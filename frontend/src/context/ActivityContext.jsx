@@ -17,7 +17,16 @@ function readEntries(key) {
     const parsed = JSON.parse(window.sessionStorage.getItem(key) || '[]');
     if (!Array.isArray(parsed)) return [];
     return parsed.filter(item => item && typeof item.id === 'string').slice(-MAX_ENTRIES)
-      .map(item => item.status === 'processing' ? { ...item, status: 'interrupted' } : item);
+      .map(item => {
+        // Compatibilidad con historial de la versión anterior: `accepted`
+        // se guardaba erróneamente bajo el estado visual `prepared`.
+        const wasSent = item.status === 'prepared' && Array.isArray(item.results)
+          && item.results.some(result => ['accepted', 'queued', 'executing'].includes(result?.status));
+        const current = wasSent ? { ...item, status: 'sent' } : item;
+        return current.status === 'processing'
+          ? { ...current, status: current.execute ? 'uncertain' : 'interrupted', error: current.execute ? 'La pestaña se cerró o recargó sin confirmar el resultado de la ejecución. Verifica el servicio externo antes de reintentar.' : undefined }
+          : current;
+      });
   } catch { return []; }
 }
 function persistEntries(key, entries) {
